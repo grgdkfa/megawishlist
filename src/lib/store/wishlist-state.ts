@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { loadState, debouncedSaveState } from "../utils/storage";
+import { loadState, debouncedSaveState, saveState } from "../utils/storage";
 
 interface WishlistBlock {
     price: number,
@@ -9,6 +9,9 @@ interface WishlistBlock {
 export type WishlistState = WishlistBlock[]
 
 const STORAGE_NAME = 'wishlist'
+const STORAGE_VERSION = '1.0'
+const STORAGE_VERSION_KEY = 'version'
+
 let initialState: WishlistState | null = null
 
 export const PRICE_MAP = [
@@ -78,13 +81,17 @@ function createInitialState(baseIncome: number | null) {
 
 const previousState = loadState<WishlistState>(STORAGE_NAME)
 if (previousState) {
-    initialState = previousState
+    const prevVersion = loadState<string>(STORAGE_VERSION_KEY)
+    if (prevVersion === STORAGE_VERSION) {
+        initialState = previousState
+    }
 }
 
 export const wishlistState = writable<WishlistState | null>(initialState)
 
 export function resetState(baseIncome: number | null) {
     wishlistState.set(createInitialState(baseIncome))
+    saveState(STORAGE_VERSION_KEY, STORAGE_VERSION)
 }
 
 export function clearState() {
